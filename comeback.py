@@ -59,24 +59,76 @@ def _exists_any():
 
 
 def cmd_status(_):
+    import json as _json
     cwd = os.getcwd()
     r = _config_call(["--show", "--cwd", cwd], capture=True)
-    sys.stdout.write(r.stdout)
-
-    # Session + youtube snapshots
-    import hashlib  # not used — we mirror lib.sh cksum logic below
-    cksum = subprocess.run(["cksum"], input=cwd.encode(), capture_output=True)
     try:
-        hashval = int(cksum.stdout.split()[0])
+        data = _json.loads(r.stdout)
+    except Exception:
+        sys.stdout.write(r.stdout)
+        return
+
+    cfg = data.get("config", {})
+    source = data.get("source", "?")
+    features = cfg.get("features", {})
+    ring_cfg = cfg.get("ring", {})
+    target = cfg.get("target", {})
+
+    ck = subprocess.run(["cksum"], input=cwd.encode(), capture_output=True)
+    try:
+        hashval = int(ck.stdout.split()[0])
     except Exception:
         hashval = 0
     session_file = f"/tmp/comeback-session-{hashval}.env"
     port = 7000 + (hashval % 2000)
     yt_file = f"/tmp/comeback-youtube-{port}.env"
 
+    on, off = "✓", "✗"
+
+    print(f"comeback  ·  {source}\n")
+
+    # focus
+    f_on = features.get("focus", False)
+    mode = target.get("mode", "auto")
+    focus_detail = ""
+    if f_on and mode == "fixed":
+        app = target.get("app") or ""
+        proj = target.get("project_path") or ""
+        focus_detail = f"  →  fixed: {app} {proj}".rstrip()
+    print(f"  focus    {on if f_on else off}{focus_detail}")
+
+    # ring
+    r_on = features.get("ring", False)
+    ring_detail = ""
+    if r_on:
+        snd = ring_cfg.get("sound_file") or ""
+        vol = ring_cfg.get("volume", 1.0)
+        ring_detail = f"  →  {os.path.basename(snd)}  vol {vol}"
+    print(f"  ring     {on if r_on else off}{ring_detail}")
+
+    # youtube
+    y_on = features.get("youtube", False)
+    yt_detail = f"  →  porta {port}" if y_on else ""
+    print(f"  youtube  {on if y_on else off}{yt_detail}")
+
+    # session
     print()
-    print(f"Session file: {session_file}  {'[found]' if os.path.exists(session_file) else '[missing]'}")
-    print(f"YouTube file: {yt_file}  {'[active]' if os.path.exists(yt_file) else '[inactive]'}")
+    if os.path.exists(session_file):
+        try:
+            env = dict(line.strip().split("=", 1) for line in open(session_file) if "=" in line)
+            proj = os.path.basename(env.get("PROJECT", ""))
+            caller = env.get("CALLER", "?")
+            print(f"  sessione attiva  ·  {caller} → {proj}")
+        except Exception:
+            print("  sessione attiva")
+    else:
+        print("  nessuna sessione attiva (avvia/riavvia Claude per registrarla)")
+
+    if y_on:
+        print(f"  youtube  {'in riproduzione' if os.path.exists(yt_file) else 'fermo'}")
+
+    print()
+    print("Comandi: /comeback enable|disable FEATURE  ·  /comeback config  ·  /comeback ring test")
 
 
 def cmd_config_exists(_):
