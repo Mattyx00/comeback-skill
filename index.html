@@ -203,7 +203,26 @@
     .terminal-output .ok { color: var(--green); }
     .terminal-output .dim { color: #444455; }
 
+    .term-copy-btn {
+      margin-left: auto;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--muted);
+      padding: 4px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      transition: color 0.2s, background 0.2s;
+    }
+    .term-copy-btn:hover { color: var(--text); background: rgba(255,255,255,0.06); }
+    .term-copy-btn.copied { color: var(--green); }
+    .term-copy-btn svg { display: block; }
+
     .copy-hint {
+      display: flex;
+      align-items: center;
+      gap: 6px;
       font-size: 12px;
       color: var(--muted);
       font-family: "SF Mono", "Fira Code", monospace;
@@ -482,6 +501,11 @@
         <div class="dot-yellow"></div>
         <div class="dot-green"></div>
         <div class="terminal-title">zsh</div>
+        <button class="term-copy-btn" id="term-copy-btn" onclick="copyTerminal(this)" title="Copy command">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+          </svg>
+        </button>
       </div>
       <div class="terminal-body">
         <div class="terminal-prompt">
@@ -497,6 +521,9 @@
     </div>
 
     <div class="copy-hint" id="copy-hint" onclick="copyCmd(this)">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+      </svg>
       click to copy
     </div>
   </section>
@@ -627,11 +654,22 @@
     // ── Copy hint ──
     function copyCmd(el) {
       navigator.clipboard.writeText(CMD).then(() => {
-        el.textContent = "copied!";
+        el.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> copied!`;
         el.classList.add("copied");
         setTimeout(() => {
-          el.textContent = "click to copy";
+          el.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> click to copy`;
           el.classList.remove("copied");
+        }, 2000);
+      });
+    }
+
+    function copyTerminal(btn) {
+      navigator.clipboard.writeText(CMD).then(() => {
+        btn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+        btn.classList.add("copied");
+        setTimeout(() => {
+          btn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`;
+          btn.classList.remove("copied");
         }, 2000);
       });
     }
