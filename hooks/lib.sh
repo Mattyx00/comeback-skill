@@ -102,9 +102,9 @@ end tell
 EOF
 }
 
-# Restore focus to $caller. When $project is known, use AppleScript to find
-# the window whose title contains the project folder name and activate it.
-# Never uses `open -a` to avoid creating new windows when the project isn't open.
+# Restore focus to $caller. When $project is known, use `open -a` which tells
+# the app to focus its existing window for that path (works for VSCode, Cursor,
+# JetBrains and most Electron IDEs). Falls back to osascript activate.
 # Process names from System Events occasionally differ from the .app bundle
 # name — PROCESS_TO_APP maps the known mismatches.
 restore_focus() {
@@ -117,23 +117,12 @@ restore_focus() {
   local app_name="${PROCESS_TO_APP[$caller]:-$caller}"
 
   if [ -n "$project" ]; then
-    local proj_name
-    proj_name=$(basename "$project")
-    osascript 2>/dev/null <<EOF || osascript -e "tell application \"$caller\" to activate" 2>/dev/null || true
-tell application "$app_name"
-  repeat with w in windows
-    try
-      if name of w contains "$proj_name" then
-        set frontmost of w to true
-        exit repeat
-      end if
-    end try
-  end repeat
-  activate
-end tell
-EOF
+    open -a "$app_name" "$project" 2>/dev/null || \
+      osascript -e "tell application \"$app_name\" to activate" 2>/dev/null || \
+      osascript -e "tell application \"$caller\" to activate" 2>/dev/null || true
   else
-    osascript -e "tell application \"$caller\" to activate" 2>/dev/null || true
+    osascript -e "tell application \"$app_name\" to activate" 2>/dev/null || \
+      osascript -e "tell application \"$caller\" to activate" 2>/dev/null || true
   fi
 }
 
