@@ -17,8 +17,12 @@ import os
 import sys
 
 SKILL_DIR = os.path.dirname(os.path.abspath(__file__))
-GLOBAL_SKILLS = os.path.expanduser("~/.claude/skills")
-GLOBAL_SETTINGS = os.path.expanduser("~/.claude/settings.json")
+
+# Claude Code sets CLAUDE_CONFIG_DIR for non-default accounts (e.g. ~/.claude-account3).
+# Fall back to ~/.claude for the default account.
+_CLAUDE_DIR = os.environ.get("CLAUDE_CONFIG_DIR") or os.path.expanduser("~/.claude")
+GLOBAL_SKILLS = os.path.join(_CLAUDE_DIR, "skills")
+GLOBAL_SETTINGS = os.path.join(_CLAUDE_DIR, "settings.json")
 
 EVENTS = [
     ("SessionStart",      "on-session-start.sh"),

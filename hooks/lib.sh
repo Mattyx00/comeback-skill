@@ -102,14 +102,36 @@ end tell
 EOF
 }
 
-# Restore focus to $caller. VS Code special-case uses `open -a` with the
-# project path because `activate` alone often focuses the wrong window when
-# multiple VS Code workspaces are open.
+# Restore focus to $caller. When $project is known, use AppleScript to find
+# the window whose title contains the project folder name and activate it.
+# Never uses `open -a` to avoid creating new windows when the project isn't open.
+# Process names from System Events occasionally differ from the .app bundle
+# name — PROCESS_TO_APP maps the known mismatches.
 restore_focus() {
   local caller="$1" project="$2"
   [ -z "$caller" ] && return 0
-  if [ "$caller" = "Code" ] && [ -n "$project" ]; then
-    open -a "Visual Studio Code" "$project" 2>/dev/null || true
+
+  declare -A PROCESS_TO_APP
+  PROCESS_TO_APP["Code"]="Visual Studio Code"
+
+  local app_name="${PROCESS_TO_APP[$caller]:-$caller}"
+
+  if [ -n "$project" ]; then
+    local proj_name
+    proj_name=$(basename "$project")
+    osascript 2>/dev/null <<EOF || osascript -e "tell application \"$caller\" to activate" 2>/dev/null || true
+tell application "$app_name"
+  repeat with w in windows
+    try
+      if name of w contains "$proj_name" then
+        set frontmost of w to true
+        exit repeat
+      end if
+    end try
+  end repeat
+  activate
+end tell
+EOF
   else
     osascript -e "tell application \"$caller\" to activate" 2>/dev/null || true
   fi
