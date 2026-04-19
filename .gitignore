@@ -1,0 +1,7 @@
+CLAUDE.md
+.claude/settings.json
+.claude/settings.local.json
+/tmp/free-time-player.log
+__pycache__/
+*.pyc
+.DS_Store
