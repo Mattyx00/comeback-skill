@@ -74,7 +74,7 @@ def cmd_status(_):
     ring_cfg = cfg.get("ring", {})
     target = cfg.get("target", {})
 
-    ck = subprocess.run(["cksum"], input=cwd.encode(), capture_output=True)
+    ck = subprocess.run(["cksum"], input=(cwd + "\n").encode(), capture_output=True)
     try:
         hashval = int(ck.stdout.split()[0])
     except Exception:
